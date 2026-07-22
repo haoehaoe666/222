@@ -69,23 +69,22 @@ def login_and_reserve(users, usernames, passwords, action, success_list=None):
 
 
 def main(users, action=False):
-    # 1. 第一步：如果是 GitHub Action，先把账号密码从环境变量里拿出来
-    # 这一步要在八点前做完，不能等八点到了才现拿
-    usernames, passwords = None, None
-    if action:
-        usernames, passwords = get_user_credentials(action)
-
-        # 2. 第二步：进入精准等待循环
-        import datetime
-        logging.info("GitHub Action 模式已启动，正在预热并等待北京时间 20:00:00...")
-        while True:
-            # 获取当前北京时间
-            now = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
-            # 一旦到了 20 点（或超过），立刻跳出循环去抢座
-            if now.hour >= 20:
-                logging.info(f"到达预定时间: {now.strftime('%H:%M:%S')}，开始抢座！")
-                break
-            time.sleep(0.1) # 稍微缩短检查间隔，提高精度
+     # 1. 第一步：如果是 GitHub Action，先把账号密码从环境变量里拿出来
+     # 这一步要在八点前做完，不能等八点到了才现拿
+     usernames, passwords = None, None
+     if action:
+         usernames, passwords = get_user_credentials(action)
+         # 2. 第二步：进入精准等待循环
+         import datetime
+         logging.info("GitHub Action 模式已启动，正在预热并等待北京时间 19:59:57...")
+         while True:
+             # 获取当前北京时间
+             now = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+             # 到达 19:59:57（或超过）就立刻跳出循环去抢座
+             if now.hour > 19 or (now.hour == 19 and now.minute == 59 and now.second >= 57):
+                 logging.info(f"到达预定时间: {now.strftime('%H:%M:%S')}，开始抢座！")
+                 break
+             time.sleep(0.1) # 稍微缩短检查间隔，提高精度
 
     # 3. 第三步：原有的抢座逻辑开始执行
     current_time = get_current_time(action)

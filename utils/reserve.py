@@ -191,6 +191,7 @@ class reserve:
     def x_distance(self, bg, tp):
         import numpy as np
         import cv2
+        from concurrent.futures import ThreadPoolExecutor
 
         def cut_slide(slide):
             slider_array = np.frombuffer(slide, np.uint8)
@@ -216,21 +217,27 @@ class reserve:
             "Upgrade-Insecure-Requests": "1",
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
         }
-        bgc, tpc = self.requests.get(bg, headers=c_captcha_headers), self.requests.get(
-            tp, headers=c_captcha_headers
-        )
+
+        # 优化 1：使用线程池并发下载背景图和滑块图
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            future_bg = executor.submit(self.requests.get, bg, headers=c_captcha_headers)
+            future_tp = executor.submit(self.requests.get, tp, headers=c_captcha_headers)
+            bgc = future_bg.result()
+            tpc = future_tp.result()
+
         bg, tp = bgc.content, tpc.content
         bg_img = cv2.imdecode(np.frombuffer(bg, np.uint8), cv2.IMREAD_COLOR)
         tp_img = cut_slide(tp)
+
+        # Canny 提取边缘
         bg_edge = cv2.Canny(bg_img, 100, 200)
         tp_edge = cv2.Canny(tp_img, 100, 200)
-        bg_pic = cv2.cvtColor(bg_edge, cv2.COLOR_GRAY2RGB)
-        tp_pic = cv2.cvtColor(tp_edge, cv2.COLOR_GRAY2RGB)
-        res = cv2.matchTemplate(bg_pic, tp_pic, cv2.TM_CCOEFF_NORMED)
-        _, _, _, max_loc = cv2.minMaxLoc(res)
-        tl = max_loc
-        return tl[0]
 
+        # 优化 2：直接在单通道边缘图上做模板匹配，减少 3 倍计算量
+        res = cv2.matchTemplate(bg_edge, tp_edge, cv2.TM_CCOEFF_NORMED)
+        _, _, _, max_loc = cv2.minMaxLoc(res)
+        
+        return max_loc[0]
     def submit(self, times, roomid, seatid, action):
         for seat in seatid:
             suc = False

@@ -102,7 +102,7 @@ def main(users, action=False):
 
         # 阶段 2：19:59:59 秒（或之后）提前拉取页面 Token
         if not token_pre_fetched and (
-            now.hour > 19 or (now.hour == 19 and now.minute == 59 and now.second >= 59)
+            now.hour > 20 or (now.hour == 20 and now.minute == 0 and now.second >= 1)
         ):
             logging.info("⏱️ 到达 19:59:59，开始提前拉取页面 Token...")
             for runner in runners:

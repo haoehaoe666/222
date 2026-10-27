@@ -93,7 +93,7 @@ def main(users, action=False):
 
         # 阶段 1：19:59:55 秒（或之后）提前解算滑块验证码
         if not captcha_pre_fetched and (
-            now.hour > 19 or (now.hour == 19 and now.minute == 59 and now.second >= 55)
+            now.hour > 19 or (now.hour == 19 and now.minute == 59 and now.second >= 56)
         ):
             logging.info("⏱️ 到达 19:59:55，开始提前解算滑块验证码...")
             for runner in runners:
